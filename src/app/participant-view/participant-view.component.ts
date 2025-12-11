@@ -39,6 +39,17 @@ import { Participant } from "../models/user.model";
 
           <!-- Case 2: Generated -->
           <ng-container *ngIf="vm.settings?.isAssignmentsGenerated">
+            <!-- Progress Bar -->
+            <div class="mb-8 bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow-sm max-w-md mx-auto">
+              <div class="flex justify-between text-sm font-medium text-gray-600 mb-2">
+                <span>Secret Santa Progress</span>
+                <span>{{ vm.allocatedCount }} / {{ vm.participantCount }} allocated</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-red-600 h-2.5 rounded-full transition-all duration-500" [style.width.%]="vm.allocationPercentage"></div>
+              </div>
+            </div>
+
             <!-- Case 2a: Assignment Exists (Revealed) -->
             <app-assignment-reveal *ngIf="vm.assignment" [assignment]="vm.assignment!" [receiver]="vm.receiverParticipant"> </app-assignment-reveal>
 
@@ -107,11 +118,14 @@ export class ParticipantViewComponent {
           tap((p: any) => console.log("Participants:", p?.length)),
           startWith([])
         ),
+        allAssignments: this.firestore.getAllAssignments().pipe(startWith([])),
         isAdmin: this.auth.isAdmin(user.email).pipe(startWith(false)),
       }).pipe(
         map((data: any) => ({
           ...data,
           participantCount: data.participants?.length || 0,
+          allocatedCount: data.allAssignments?.length || 0,
+          allocationPercentage: data.participants?.length ? ((data.allAssignments?.length || 0) / data.participants.length) * 100 : 0,
           currentParticipant: data.participants?.find((p: Participant) => p.email === data.user.email),
           receiverParticipant: data.assignment ? data.participants?.find((p: Participant) => p.email === data.assignment.receiverEmail) : null,
         })),
