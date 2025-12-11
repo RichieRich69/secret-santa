@@ -89,23 +89,25 @@ export interface TimeRemaining {
             <p class="text-gray-500 mb-4 text-sm">Add up to 5 items you'd love to receive!</p>
 
             <div class="mb-4" *ngIf="(vm.currentParticipant.preferredGifts?.length || 0) < 5">
-              <div class="flex gap-2 mb-2">
+              <div class="flex flex-col sm:flex-row gap-2 mb-2">
                 <input
                   #giftInput
                   type="text"
                   placeholder="e.g. Funny socks"
-                  class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  class="w-full sm:flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
                   (keyup.enter)="addGift(vm.currentParticipant, giftInput.value); giftInput.value = ''"
                 />
-                <button (click)="addGift(vm.currentParticipant, giftInput.value); giftInput.value = ''" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">Add</button>
+                <button (click)="addGift(vm.currentParticipant, giftInput.value); giftInput.value = ''" class="w-full sm:w-auto bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
+                  Add
+                </button>
               </div>
               <button (click)="suggestGift(giftInput)" class="text-sm text-blue-600 hover:underline">Need inspiration? Suggest a gift idea 💡</button>
             </div>
 
             <ul class="space-y-2">
               <li *ngFor="let gift of vm.currentParticipant.preferredGifts; let i = index" class="flex justify-between items-center bg-gray-50 p-3 rounded">
-                <span>{{ gift }}</span>
-                <button (click)="removeGift(vm.currentParticipant, i)" class="text-red-500 hover:text-red-700">✕</button>
+                <span class="break-words mr-2">{{ gift }}</span>
+                <button (click)="removeGift(vm.currentParticipant, i)" class="text-red-500 hover:text-red-700 shrink-0 p-1">✕</button>
               </li>
               <li *ngIf="!vm.currentParticipant.preferredGifts?.length" class="text-gray-400 italic">No gifts added yet.</li>
             </ul>

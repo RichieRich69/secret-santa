@@ -4,7 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 import { FirestoreService } from "../services/firestore.service";
 import { Participant, Assignment } from "../models/user.model";
-import { Observable, tap } from "rxjs";
+import { Observable, tap, combineLatest, map } from "rxjs";
 import { Timestamp } from "@angular/fire/firestore";
 
 @Component({
@@ -12,7 +12,7 @@ import { Timestamp } from "@angular/fire/firestore";
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="min-h-screen p-4 md:p-8">
+    <div class="min-h-screen p-4 md:p-8" *ngIf="vm$ | async as vm">
       <div class="max-w-4xl mx-auto">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
           <h1 class="text-2xl md:text-3xl font-bold text-white drop-shadow-md">Admin Dashboard</h1>
@@ -61,7 +61,7 @@ import { Timestamp } from "@angular/fire/firestore";
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
-              <tr *ngFor="let p of participants$ | async">
+              <tr *ngFor="let p of vm.participants" [class.bg-yellow-50]="!p.isAllocated">
                 <td class="px-6 py-4 whitespace-nowrap">{{ p.displayName }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ p.email }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -80,7 +80,7 @@ import { Timestamp } from "@angular/fire/firestore";
 
           <!-- Mobile Cards -->
           <div class="md:hidden divide-y divide-gray-200">
-            <div *ngFor="let p of participants$ | async" class="p-4 space-y-2">
+            <div *ngFor="let p of vm.participants" class="p-4 space-y-2" [class.bg-yellow-50]="!p.isAllocated">
               <div class="flex justify-between items-start">
                 <div>
                   <div class="font-medium text-gray-900">{{ p.displayName }}</div>
@@ -108,7 +108,7 @@ import { Timestamp } from "@angular/fire/firestore";
         </div>
 
         <!-- Assignments List -->
-        <div class="bg-white rounded-lg shadow overflow-hidden mt-8" *ngIf="(assignments$ | async)?.length">
+        <div class="bg-white rounded-lg shadow overflow-hidden mt-8" *ngIf="vm.assignments.length">
           <h2 class="text-xl font-semibold p-6 border-b">Assignments</h2>
 
           <!-- Desktop Table -->
@@ -121,7 +121,7 @@ import { Timestamp } from "@angular/fire/firestore";
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
-              <tr *ngFor="let a of assignments$ | async">
+              <tr *ngFor="let a of vm.assignments">
                 <td class="px-6 py-4 whitespace-nowrap">{{ a.giverEmail }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ a.receiverDisplayName }} ({{ a.receiverEmail }})</td>
                 <td class="px-6 py-4 whitespace-nowrap text-right">
@@ -133,7 +133,7 @@ import { Timestamp } from "@angular/fire/firestore";
 
           <!-- Mobile Cards -->
           <div class="md:hidden divide-y divide-gray-200">
-            <div *ngFor="let a of assignments$ | async" class="p-4">
+            <div *ngFor="let a of vm.assignments" class="p-4">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-xs font-medium text-gray-500 uppercase">Giver</span>
                 <button (click)="unassign(a.giverEmail)" class="text-red-600 text-sm">Unassign</button>
@@ -156,6 +156,19 @@ export class AdminDashboardComponent {
 
   participants$: Observable<Participant[]> = this.firestore.getParticipants();
   assignments$: Observable<Assignment[]> = this.firestore.getAllAssignments();
+
+  vm$ = combineLatest([this.participants$, this.assignments$]).pipe(
+    map(([participants, assignments]) => {
+      const allocatedEmails = new Set(assignments.map((a) => a.giverEmail));
+      return {
+        participants: participants.map((p) => ({
+          ...p,
+          isAllocated: allocatedEmails.has(p.email),
+        })),
+        assignments,
+      };
+    })
+  );
 
   exchangeDate: string = "";
 
