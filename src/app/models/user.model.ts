@@ -9,6 +9,8 @@ export interface Participant {
   naughtyOrNice?: "naughty" | "nice";
   exclusions?: string[]; // List of emails this participant cannot pick
   preferredGifts?: string[]; // List of preferred gifts (max 5)
+  guesses?: string[]; // List of emails this participant has accused
+  correctGuesses?: number; // Number of correct accusations
 }
 
 export interface Assignment {

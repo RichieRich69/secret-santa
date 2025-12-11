@@ -1,5 +1,5 @@
 import { Injectable, inject } from "@angular/core";
-import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, writeBatch, Timestamp, docSnapshots, runTransaction, getDocs } from "@angular/fire/firestore";
+import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, writeBatch, Timestamp, docSnapshots, runTransaction, getDocs, getDoc, updateDoc, arrayUnion, increment } from "@angular/fire/firestore";
 import { Observable, map } from "rxjs";
 import { Participant, Assignment, Settings } from "../models/user.model";
 
@@ -161,6 +161,29 @@ export class FirestoreService {
   getAssignment(email: string): Observable<Assignment | null> {
     const ref = doc(this.firestore, "assignments", email);
     return docSnapshots(ref).pipe(map((s) => (s.exists() ? (s.data() as Assignment) : null)));
+  }
+
+  async makeGuess(guesserEmail: string, suspectEmail: string): Promise<boolean> {
+    const suspectRef = doc(this.firestore, "participants", suspectEmail);
+    const guesserRef = doc(this.firestore, "participants", guesserEmail);
+
+    const suspectSnap = await getDoc(suspectRef);
+    if (!suspectSnap.exists()) throw new Error("Suspect not found");
+
+    const suspectData = suspectSnap.data() as Participant;
+    const isNaughty = suspectData.naughtyOrNice === "naughty";
+
+    const updateData: any = {
+      guesses: arrayUnion(suspectEmail),
+    };
+
+    if (isNaughty) {
+      updateData.correctGuesses = increment(1);
+    }
+
+    await updateDoc(guesserRef, updateData);
+
+    return isNaughty;
   }
 
   private shuffle(array: any[]) {

@@ -126,6 +126,29 @@ export interface TimeRemaining {
             </div>
             <p class="mt-6 text-gray-500 italic text-sm max-w-xs mx-auto">There is a prize to be won for the one that can sniff out one of the two Naughty characters! 🕵️</p>
           </div>
+
+          <!-- Detective Mode -->
+          <div class="bg-white p-6 rounded-lg shadow-md mt-6" *ngIf="vm.currentParticipant">
+            <h3 class="text-xl font-bold text-gray-700 mb-4">Detective Mode 🕵️‍♂️</h3>
+            <p class="text-gray-500 mb-4 text-sm">Guess who is on the Naughty List! ({{ vm.currentParticipant.correctGuesses || 0 }} found)</p>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <div *ngFor="let suspect of vm.suspects" class="border rounded p-3 text-center relative">
+                <div *ngIf="vm.currentParticipant.guesses?.includes(suspect.email)" class="absolute inset-0 bg-gray-100/80 flex items-center justify-center z-10">
+                  <span class="font-bold text-gray-500 transform -rotate-12 border-2 border-gray-500 px-2 py-1 rounded">INVESTIGATED</span>
+                </div>
+                <img [src]="getAvatarUrl(suspect.displayName)" class="w-12 h-12 rounded-full mx-auto mb-2" />
+                <div class="font-medium text-sm truncate">{{ suspect.displayName }}</div>
+                <button
+                  (click)="makeGuess(vm.currentParticipant.email, suspect.email)"
+                  [disabled]="vm.currentParticipant.guesses?.includes(suspect.email)"
+                  class="mt-2 text-xs bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-700 disabled:opacity-50"
+                >
+                  Accuse!
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -152,8 +175,6 @@ export class ParticipantViewComponent {
     "Bluetooth Speaker 🔊",
   ];
 
-  naughtyOrNice = Math.random() > 0.9 ? "Naughty 😈" : "Nice 😇";
-
   user$ = this.auth.user$;
 
   // View Model
@@ -179,16 +200,22 @@ export class ParticipantViewComponent {
         allAssignments: this.firestore.getAllAssignments().pipe(startWith([])),
         isAdmin: this.auth.isAdmin(user.email).pipe(startWith(false)),
       }).pipe(
-        map((data: any) => ({
-          ...data,
-          naughtyOrNice: this.naughtyOrNice,
-          participantCount: data.participants?.length || 0,
-          allocatedCount: data.allAssignments?.length || 0,
-          allocationPercentage: data.participants?.length ? ((data.allAssignments?.length || 0) / data.participants.length) * 100 : 0,
-          currentParticipant: data.participants?.find((p: Participant) => p.email === data.user.email),
-          receiverParticipant: data.assignment ? data.participants?.find((p: Participant) => p.email === data.assignment.receiverEmail) : null,
-          timeRemaining$: this.createCountdown(data.settings?.exchangeDate),
-        })),
+        map((data: any) => {
+          const currentParticipant = data.participants?.find((p: Participant) => p.email === data.user.email);
+          const naughtyOrNice = currentParticipant?.naughtyOrNice === "naughty" ? "Naughty 😈" : "Nice 😇";
+          
+          return {
+            ...data,
+            naughtyOrNice,
+            participantCount: data.participants?.length || 0,
+            allocatedCount: data.allAssignments?.length || 0,
+            allocationPercentage: data.participants?.length ? ((data.allAssignments?.length || 0) / data.participants.length) * 100 : 0,
+            currentParticipant,
+            receiverParticipant: data.assignment ? data.participants?.find((p: Participant) => p.email === data.assignment.receiverEmail) : null,
+            timeRemaining$: this.createCountdown(data.settings?.exchangeDate),
+            suspects: data.participants?.filter((p: Participant) => p.email !== data.user.email) || [],
+          };
+        }),
         tap((vm: any) => console.log("VM:", vm))
       );
     })
@@ -258,6 +285,21 @@ export class ParticipantViewComponent {
     } catch (error: any) {
       console.error("Error drawing assignment:", error);
       alert(error.message);
+    }
+  }
+
+  async makeGuess(guesserEmail: string, suspectEmail: string) {
+    if (!confirm("Are you sure you want to accuse this person? You can't take it back!")) return;
+    try {
+      const isNaughty = await this.firestore.makeGuess(guesserEmail, suspectEmail);
+      if (isNaughty) {
+        alert("You caught them! 🕵️‍♂️ They were Naughty!");
+      } else {
+        alert("Wrong! They are Nice 😇. Better luck next time.");
+      }
+    } catch (error: any) {
+      console.error("Error making guess:", error);
+      alert("Something went wrong: " + error.message);
     }
   }
 }
