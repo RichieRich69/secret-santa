@@ -5,7 +5,7 @@ out-tsc/
 /bazel-out
 /dist
 /node_modules
-/functions/node_modules
+/firebase-functions/node_modules
 
 # Firebase
 .firebase/
