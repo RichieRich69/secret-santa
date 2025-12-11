@@ -271,7 +271,7 @@ export class ParticipantViewComponent {
   }
 
   getAvatarUrl(name: string | null | undefined): string {
-    return `https://ui-avatars.com/api/?name=${name || "User"}&background=random`;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "User")}&background=random`;
   }
 
   logout() {
