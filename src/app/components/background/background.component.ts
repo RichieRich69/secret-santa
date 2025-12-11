@@ -4,7 +4,13 @@ import * as THREE from "three";
 @Component({
   selector: "app-background",
   standalone: true,
-  template: ` <div #rendererContainer class="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none bg-gradient-to-b from-slate-900 to-slate-800"></div> `,
+  template: `
+    <div
+      #rendererContainer
+      class="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none bg-slate-900 bg-cover bg-center bg-no-repeat"
+      style="background-image: url('/assets/media/wallpaper.png');"
+    ></div>
+  `,
   styles: [],
 })
 export class BackgroundComponent implements OnInit, OnDestroy {
@@ -64,7 +70,7 @@ export class BackgroundComponent implements OnInit, OnDestroy {
     container.appendChild(this.renderer.domElement);
 
     // Particles (Snow)
-    const particleCount = 1500;
+    const particleCount = 2000;
     const geometry = new THREE.BufferGeometry();
     const positions = [];
     const velocities = [];
@@ -88,12 +94,12 @@ export class BackgroundComponent implements OnInit, OnDestroy {
 
     const material = new THREE.PointsMaterial({
       color: 0xffffff,
-      size: 4,
+      size: 8,
       map: sprite,
       blending: THREE.AdditiveBlending,
       depthTest: false,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.9,
     });
 
     this.particles = new THREE.Points(geometry, material);

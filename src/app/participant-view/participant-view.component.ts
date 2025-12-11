@@ -44,7 +44,9 @@ import { Participant } from "../models/user.model";
 
             <!-- Case 2b: No Assignment Yet (Pick a Card) -->
             <div *ngIf="!vm.assignment">
-              <h2 class="text-center text-2xl font-bold text-white drop-shadow-md mb-6">Pick a Card to Draw your Match!</h2>
+              <div class="text-center mb-8">
+                <h2 class="inline-block text-3xl font-bold text-red-600 bg-white/95 backdrop-blur-sm px-8 py-4 rounded-full shadow-xl border-2 border-red-100">Pick a Card to Draw your Match!</h2>
+              </div>
               <app-card-grid [count]="vm.participantCount" (selected)="onCardSelected(vm.user.email!)"> </app-card-grid>
             </div>
           </ng-container>
