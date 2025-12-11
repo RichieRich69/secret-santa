@@ -1,0 +1,32 @@
+# Angular
+.angular/
+dist/
+out-tsc/
+/bazel-out
+/dist
+/node_modules
+/functions/node_modules
+
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+*.sublime-workspace
+*.sublime-project
+
+# OS
+Thumbs.db
+
+# Environment
+.env
+
+# Environments
+src/environments/environment.ts
+src/environments/environment.prod.ts

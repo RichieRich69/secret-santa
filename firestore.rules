@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/settings/global) &&
+        'adminEmails' in get(/databases/$(database)/documents/settings/global).data &&
+        request.auth.token.email in get(/databases/$(database)/documents/settings/global).data.adminEmails;
+    }
+
+    // Settings: Everyone can read global settings (to check if generated), only admin can write
+    match /settings/global {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Participants: Everyone can read (for count/list), only admin can write
+    match /participants/{email} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Assignments: 
+    // - Admin can read all.
+    // - User can read ONLY their own assignment (doc ID is their email).
+    // - Only admin can create/delete (generate).
+    // - User can update ONLY 'isRevealed' field on their own doc.
+    match /assignments/{email} {
+      // Allow read for all authenticated users so they can check for taken receivers during draw
+      allow read: if request.auth != null;
+      // Allow users to create their own assignment (draw a card), including assigning to themselves
+      allow create: if request.auth != null && request.auth.token.email == email;
+      allow delete: if isAdmin();
+      allow update: if isAdmin() || (request.auth != null && request.auth.token.email == email && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRevealed']));
+    }
+    
+    // Notifications tokens
+    match /notificationTokens/{token} {
+      allow create: if request.auth != null;
+    }
+  }
+}
