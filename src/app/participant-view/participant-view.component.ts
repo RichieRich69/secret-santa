@@ -203,7 +203,7 @@ export class ParticipantViewComponent {
         map((data: any) => {
           const currentParticipant = data.participants?.find((p: Participant) => p.email === data.user.email);
           const naughtyOrNice = currentParticipant?.naughtyOrNice === "naughty" ? "Naughty 😈" : "Nice 😇";
-          
+
           return {
             ...data,
             naughtyOrNice,

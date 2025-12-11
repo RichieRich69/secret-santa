@@ -1,5 +1,21 @@
 import { Injectable, inject } from "@angular/core";
-import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, writeBatch, Timestamp, docSnapshots, runTransaction, getDocs, getDoc, updateDoc, arrayUnion, increment } from "@angular/fire/firestore";
+import {
+  Firestore,
+  collection,
+  collectionData,
+  doc,
+  setDoc,
+  deleteDoc,
+  writeBatch,
+  Timestamp,
+  docSnapshots,
+  runTransaction,
+  getDocs,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  increment,
+} from "@angular/fire/firestore";
 import { Observable, map } from "rxjs";
 import { Participant, Assignment, Settings } from "../models/user.model";
 
