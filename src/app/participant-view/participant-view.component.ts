@@ -114,10 +114,17 @@ export interface TimeRemaining {
           </div>
 
           <!-- Naughty or Nice Badge -->
-          <div class="bg-white p-4 rounded-lg shadow-md text-center" *ngIf="vm.currentParticipant">
-            <span class="text-xs font-semibold rounded-full py-1 px-3" [ngClass]="vm.naughtyOrNice === 'Naughty 😈' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'">
-              {{ vm.naughtyOrNice }}
-            </span>
+          <div class="bg-white p-8 rounded-xl shadow-lg text-center mt-6 transform hover:scale-105 transition-transform duration-300" *ngIf="vm.currentParticipant">
+            <h3 class="text-gray-400 uppercase tracking-widest text-xs font-bold mb-4">Official Status</h3>
+            <div class="inline-block">
+              <span
+                class="text-4xl font-black rounded-full py-4 px-10 shadow-sm border-4"
+                [ngClass]="vm.naughtyOrNice.includes('naughty') ? 'bg-red-100 text-red-800 border-red-200' : 'bg-green-100 text-green-800 border-green-200'"
+              >
+                {{ vm.naughtyOrNice }}
+              </span>
+            </div>
+            <p class="mt-6 text-gray-500 italic text-sm max-w-xs mx-auto">There is a prize to be won for the one that can sniff out one of the two Naughty characters! 🕵️</p>
           </div>
         </div>
       </div>
