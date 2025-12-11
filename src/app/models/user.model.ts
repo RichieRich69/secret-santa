@@ -7,6 +7,7 @@ export interface Participant {
   createdAt: Timestamp;
   isActive: boolean;
   exclusions?: string[]; // List of emails this participant cannot pick
+  preferredGifts?: string[]; // List of preferred gifts (max 5)
 }
 
 export interface Assignment {

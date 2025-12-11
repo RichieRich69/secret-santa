@@ -1,4 +1,4 @@
-import { Component, inject } from "@angular/core";
+import { Component, inject, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { AuthService } from "../services/auth.service";
 import { Router } from "@angular/router";
@@ -8,8 +8,8 @@ import { Router } from "@angular/router";
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-red-600">
-      <div class="bg-white p-8 rounded-lg shadow-xl text-center max-w-md w-full">
+    <div class="min-h-screen flex items-center justify-center">
+      <div class="bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-xl text-center max-w-md w-full">
         <h1 class="text-3xl font-bold text-red-600 mb-6">Secret Santa 🎅</h1>
         <p class="text-gray-600 mb-8">Sign in to join the holiday fun!</p>
 
@@ -31,12 +31,20 @@ import { Router } from "@angular/router";
     </div>
   `,
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private auth = inject(AuthService);
   private router = inject(Router);
 
   errorMessage: string | null = null;
   isLoading = false;
+
+  ngOnInit() {
+    this.auth.user$.subscribe((user) => {
+      if (user) {
+        this.router.navigate(["/participant"]);
+      }
+    });
+  }
 
   login() {
     this.errorMessage = null;

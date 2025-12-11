@@ -10,12 +10,12 @@ import { Observable } from "rxjs";
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="min-h-screen bg-gray-100 p-8">
+    <div class="min-h-screen p-8">
       <div class="max-w-4xl mx-auto">
-        <h1 class="text-3xl font-bold text-gray-800 mb-8">Admin Dashboard</h1>
+        <h1 class="text-3xl font-bold text-white mb-8 drop-shadow-md">Admin Dashboard</h1>
 
         <!-- Add Participant -->
-        <div class="bg-white p-6 rounded-lg shadow mb-8">
+        <div class="bg-white/90 backdrop-blur-sm p-6 rounded-lg shadow mb-8">
           <h2 class="text-xl font-semibold mb-4">Add Participant</h2>
           <div class="flex gap-4">
             <input [(ngModel)]="newEmail" placeholder="Gmail Address" class="flex-1 border p-2 rounded" />
@@ -25,7 +25,8 @@ import { Observable } from "rxjs";
         </div>
 
         <!-- Actions -->
-        <div class="flex justify-end mb-4">
+        <div class="flex justify-end mb-4 gap-4">
+          <button (click)="reset()" class="bg-gray-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-700 shadow-lg">Reset Exchange 🔄</button>
           <button (click)="generate()" class="bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700 shadow-lg">Start the exchange 🎲</button>
         </div>
 
@@ -37,6 +38,7 @@ import { Observable } from "rxjs";
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exclusions</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preferred Gifts</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -46,6 +48,9 @@ import { Observable } from "rxjs";
                 <td class="px-6 py-4 whitespace-nowrap">{{ p.email }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {{ p.exclusions?.join(", ") || "None" }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ p.preferredGifts?.join(", ") || "None" }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right">
                   <button (click)="updateExclusions(p)" class="text-blue-600 hover:text-blue-900 mr-4">Rules</button>
@@ -64,12 +69,16 @@ import { Observable } from "rxjs";
               <tr>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giver</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receiver</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
               <tr *ngFor="let a of assignments$ | async">
                 <td class="px-6 py-4 whitespace-nowrap">{{ a.giverEmail }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ a.receiverDisplayName }} ({{ a.receiverEmail }})</td>
+                <td class="px-6 py-4 whitespace-nowrap text-right">
+                  <button (click)="unassign(a.giverEmail)" class="text-red-600 hover:text-red-900">Unassign</button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -130,6 +139,27 @@ export class AdminDashboardComponent {
       try {
         await this.firestore.startExchange();
         alert("Exchange started! Participants can now pick their matches.");
+      } catch (e: any) {
+        alert(e.message);
+      }
+    }
+  }
+
+  async reset() {
+    if (confirm("Are you sure you want to RESET the exchange? This will delete ALL assignments and stop the exchange.")) {
+      try {
+        await this.firestore.resetExchange();
+        alert("Exchange has been reset.");
+      } catch (e: any) {
+        alert(e.message);
+      }
+    }
+  }
+
+  async unassign(giverEmail: string) {
+    if (confirm(`Are you sure you want to unassign ${giverEmail}?`)) {
+      try {
+        await this.firestore.unassign(giverEmail);
       } catch (e: any) {
         alert(e.message);
       }

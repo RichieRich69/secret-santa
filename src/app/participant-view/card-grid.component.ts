@@ -10,9 +10,11 @@ import { CommonModule } from "@angular/common";
       <button
         *ngFor="let i of numbers"
         (click)="select(i)"
-        class="aspect-[3/4] bg-red-600 rounded-lg shadow-lg flex items-center justify-center text-white text-4xl font-bold hover:bg-red-700 hover:scale-105 transition transform cursor-pointer border-4 border-white"
+        style="background-image: url('assets/media/card.jpg')"
+        class="aspect-[3/4] bg-gray-200 bg-cover bg-center rounded-lg shadow-lg flex items-center justify-center text-white text-4xl font-bold hover:scale-105 transition transform cursor-pointer border-4 border-white relative overflow-hidden group"
       >
-        {{ i }}
+        <div class="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors"></div>
+        <span class="relative z-10 drop-shadow-lg">{{ i }}</span>
       </button>
     </div>
   `,

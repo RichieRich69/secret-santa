@@ -54,6 +54,27 @@ export class FirestoreService {
     return batch.commit();
   }
 
+  async resetExchange() {
+    const batch = writeBatch(this.firestore);
+
+    // 1. Delete all assignments
+    const assignmentsRef = collection(this.firestore, "assignments");
+    const snapshot = await getDocs(assignmentsRef);
+    snapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    // 2. Reset settings flag
+    const settingsRef = doc(this.firestore, "settings/global");
+    batch.update(settingsRef, { isAssignmentsGenerated: false });
+
+    return batch.commit();
+  }
+
+  async unassign(giverEmail: string) {
+    return deleteDoc(doc(this.firestore, "assignments", giverEmail));
+  }
+
   async drawAssignment(giverEmail: string): Promise<void> {
     return runTransaction(this.firestore, async (transaction) => {
       // 1. Get all participants

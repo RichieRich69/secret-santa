@@ -7,19 +7,20 @@ import { combineLatest, of } from "rxjs";
 import { User } from "@angular/fire/auth";
 import { CardGridComponent } from "./card-grid.component";
 import { AssignmentRevealComponent } from "./assignment-reveal.component";
-import { RouterModule } from "@angular/router";
+import { RouterModule, Router } from "@angular/router";
+import { Participant } from "../models/user.model";
 
 @Component({
   selector: "app-participant-view",
   standalone: true,
   imports: [CommonModule, CardGridComponent, AssignmentRevealComponent, RouterModule],
   template: `
-    <div class="min-h-screen bg-gray-100 p-4">
+    <div class="min-h-screen p-4">
       <div class="max-w-6xl mx-auto">
-        <header class="flex justify-between items-center mb-8">
+        <header class="flex justify-between items-center mb-8 bg-white/80 backdrop-blur-sm p-4 rounded-lg shadow-sm" *ngIf="user$ | async as user">
           <div class="flex items-center gap-4">
-            <img [src]="(user$ | async)?.photoURL || 'assets/placeholder-user.png'" (error)="handleImageError($event)" class="w-10 h-10 rounded-full bg-gray-300" alt="User Avatar" />
-            <span class="font-bold text-gray-700">{{ (user$ | async)?.displayName }}</span>
+            <img [src]="user.photoURL || getAvatarUrl(user.displayName)" (error)="handleImageError($event, user.displayName)" class="w-10 h-10 rounded-full bg-gray-300" alt="User Avatar" />
+            <span class="font-bold text-gray-700">{{ user.displayName }}</span>
           </div>
           <button (click)="logout()" class="text-sm text-gray-500 hover:text-red-600">Sign Out</button>
         </header>
@@ -31,22 +32,47 @@ import { RouterModule } from "@angular/router";
           </div>
 
           <!-- Case 1: Not Generated Yet -->
-          <div *ngIf="!vm.settings?.isAssignmentsGenerated" class="text-center mt-20">
-            <h2 class="text-2xl font-bold text-gray-600">Hold your reindeer! 🦌</h2>
-            <p class="text-gray-500 mt-2">The admin hasn't generated the assignments yet.</p>
+          <div *ngIf="!vm.settings?.isAssignmentsGenerated" class="text-center mt-20 bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-xl max-w-md mx-auto">
+            <h2 class="text-2xl font-bold text-gray-800">Hold your reindeer! 🦌</h2>
+            <p class="text-gray-600 mt-2">The admin hasn't generated the assignments yet.</p>
           </div>
 
           <!-- Case 2: Generated -->
           <ng-container *ngIf="vm.settings?.isAssignmentsGenerated">
             <!-- Case 2a: Assignment Exists (Revealed) -->
-            <app-assignment-reveal *ngIf="vm.assignment" [assignment]="vm.assignment!"> </app-assignment-reveal>
+            <app-assignment-reveal *ngIf="vm.assignment" [assignment]="vm.assignment!" [receiver]="vm.receiverParticipant"> </app-assignment-reveal>
 
             <!-- Case 2b: No Assignment Yet (Pick a Card) -->
             <div *ngIf="!vm.assignment">
-              <h2 class="text-center text-2xl font-bold text-red-600 mb-6">Pick a Card to Draw your Match!</h2>
+              <h2 class="text-center text-2xl font-bold text-white drop-shadow-md mb-6">Pick a Card to Draw your Match!</h2>
               <app-card-grid [count]="vm.participantCount" (selected)="onCardSelected(vm.user.email!)"> </app-card-grid>
             </div>
           </ng-container>
+
+          <!-- Preferred Gifts Section -->
+          <div class="bg-white p-6 rounded-lg shadow-md mb-6" *ngIf="vm.currentParticipant">
+            <h3 class="text-xl font-bold text-gray-700 mb-4">My Wishlist 🎁</h3>
+            <p class="text-gray-500 mb-4 text-sm">Add up to 5 items you'd love to receive!</p>
+
+            <div class="flex gap-2 mb-4" *ngIf="(vm.currentParticipant.preferredGifts?.length || 0) < 5">
+              <input
+                #giftInput
+                type="text"
+                placeholder="e.g. Funny socks"
+                class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+                (keyup.enter)="addGift(vm.currentParticipant, giftInput.value); giftInput.value = ''"
+              />
+              <button (click)="addGift(vm.currentParticipant, giftInput.value); giftInput.value = ''" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">Add</button>
+            </div>
+
+            <ul class="space-y-2">
+              <li *ngFor="let gift of vm.currentParticipant.preferredGifts; let i = index" class="flex justify-between items-center bg-gray-50 p-3 rounded">
+                <span>{{ gift }}</span>
+                <button (click)="removeGift(vm.currentParticipant, i)" class="text-red-500 hover:text-red-700">✕</button>
+              </li>
+              <li *ngIf="!vm.currentParticipant.preferredGifts?.length" class="text-gray-400 italic">No gifts added yet.</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -55,6 +81,7 @@ import { RouterModule } from "@angular/router";
 export class ParticipantViewComponent {
   private auth = inject(AuthService);
   private firestore = inject(FirestoreService);
+  private router = inject(Router);
 
   user$ = this.auth.user$;
 
@@ -83,18 +110,41 @@ export class ParticipantViewComponent {
         map((data: any) => ({
           ...data,
           participantCount: data.participants?.length || 0,
+          currentParticipant: data.participants?.find((p: Participant) => p.email === data.user.email),
+          receiverParticipant: data.assignment ? data.participants?.find((p: Participant) => p.email === data.assignment.receiverEmail) : null,
         })),
         tap((vm: any) => console.log("VM:", vm))
       );
     })
   );
 
-  logout() {
-    this.auth.logout();
+  async addGift(participant: Participant, gift: string) {
+    if (!gift.trim()) return;
+    const currentGifts = participant.preferredGifts || [];
+    if (currentGifts.length >= 5) return;
+
+    const newGifts = [...currentGifts, gift.trim()];
+    await this.firestore.updateParticipant(participant.email, { preferredGifts: newGifts });
   }
 
-  handleImageError(event: any) {
-    event.target.src = "https://ui-avatars.com/api/?name=User&background=random";
+  async removeGift(participant: Participant, index: number) {
+    const currentGifts = participant.preferredGifts || [];
+    const newGifts = currentGifts.filter((_, i) => i !== index);
+    await this.firestore.updateParticipant(participant.email, { preferredGifts: newGifts });
+  }
+
+  getAvatarUrl(name: string | null | undefined): string {
+    return `https://ui-avatars.com/api/?name=${name || "User"}&background=random`;
+  }
+
+  logout() {
+    this.auth.logout().subscribe(() => {
+      this.router.navigate(["/"]);
+    });
+  }
+
+  handleImageError(event: any, name?: string | null) {
+    event.target.src = this.getAvatarUrl(name);
   }
 
   async onCardSelected(email: string) {
