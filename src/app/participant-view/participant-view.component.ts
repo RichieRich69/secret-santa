@@ -38,6 +38,20 @@ export interface TimeRemaining {
             <a routerLink="/admin" class="inline-block bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition"> Go to Admin Dashboard 🛠️ </a>
           </div>
 
+          <!-- Countdown Timer -->
+          <div class="bg-white p-6 rounded-lg shadow-md mb-6 max-w-md mx-auto" *ngIf="vm.timeRemaining$ | async as timeRemaining">
+            <h3 class="text-xl font-bold text-gray-700 mb-4">Time Remaining ⏳</h3>
+            <div *ngIf="timeRemaining; else exchangeNotActive" class="text-center">
+              <div class="text-4xl font-extrabold text-red-600">
+                {{ $any(timeRemaining).days }}d {{ $any(timeRemaining).hours }}h {{ $any(timeRemaining).minutes }}m {{ $any(timeRemaining).seconds }}s
+              </div>
+              <p class="text-gray-500 text-sm mt-2">Hurry up! The exchange is about to happen!</p>
+            </div>
+            <ng-template #exchangeNotActive>
+              <p class="text-gray-500 text-center text-sm">The exchange date is not set or has passed.</p>
+            </ng-template>
+          </div>
+
           <!-- Case 1: Not Generated Yet -->
           <div *ngIf="!vm.settings?.isAssignmentsGenerated" class="text-center mt-20 bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-xl max-w-md mx-auto">
             <h2 class="text-2xl font-bold text-gray-800">Hold your reindeer! 🦌</h2>
@@ -68,20 +82,6 @@ export interface TimeRemaining {
               <app-card-grid [count]="vm.participantCount" (selected)="onCardSelected(vm.user.email!)"> </app-card-grid>
             </div>
           </ng-container>
-
-          <!-- Countdown Timer -->
-          <div class="bg-white p-6 rounded-lg shadow-md mb-6 max-w-md mx-auto" *ngIf="vm.timeRemaining$ | async as timeRemaining">
-            <h3 class="text-xl font-bold text-gray-700 mb-4">Time Remaining ⏳</h3>
-            <div *ngIf="timeRemaining; else exchangeNotActive" class="text-center">
-              <div class="text-4xl font-extrabold text-red-600">
-                {{ $any(timeRemaining).days }}d {{ $any(timeRemaining).hours }}h {{ $any(timeRemaining).minutes }}m {{ $any(timeRemaining).seconds }}s
-              </div>
-              <p class="text-gray-500 text-sm mt-2">Hurry up! The exchange is about to happen!</p>
-            </div>
-            <ng-template #exchangeNotActive>
-              <p class="text-gray-500 text-center text-sm">The exchange date is not set or has passed.</p>
-            </ng-template>
-          </div>
 
           <!-- Preferred Gifts Section -->
           <div class="bg-white p-6 rounded-lg shadow-md mb-6" *ngIf="vm.currentParticipant">
