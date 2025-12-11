@@ -114,11 +114,11 @@ export interface TimeRemaining {
           </div>
 
           <!-- Naughty or Nice Badge -->
-          <div class="bg-white p-8 rounded-xl shadow-lg text-center mt-6 transform hover:scale-105 transition-transform duration-300" *ngIf="vm.currentParticipant">
+          <div class="bg-white p-4 sm:p-8 rounded-xl shadow-lg text-center mt-6 transform hover:scale-105 transition-transform duration-300" *ngIf="vm.currentParticipant">
             <h3 class="text-gray-400 uppercase tracking-widest text-xs font-bold mb-4">Official Status</h3>
             <div class="inline-block">
               <span
-                class="text-4xl font-black rounded-full py-4 px-10 shadow-sm border-4"
+                class="text-2xl sm:text-4xl font-black rounded-full py-2 px-6 sm:py-4 sm:px-10 shadow-sm border-4 block sm:inline-block"
                 [ngClass]="vm.naughtyOrNice.includes('naughty') ? 'bg-red-100 text-red-800 border-red-200' : 'bg-green-100 text-green-800 border-green-200'"
               >
                 {{ vm.naughtyOrNice }}
@@ -130,19 +130,24 @@ export interface TimeRemaining {
           <!-- Detective Mode -->
           <div class="bg-white p-6 rounded-lg shadow-md mt-6" *ngIf="vm.currentParticipant">
             <h3 class="text-xl font-bold text-gray-700 mb-4">Detective Mode 🕵️‍♂️</h3>
-            <p class="text-gray-500 mb-4 text-sm">Guess who is on the Naughty List! ({{ vm.currentParticipant.correctGuesses || 0 }} found)</p>
+            <div class="flex justify-between items-center mb-4">
+              <p class="text-gray-500 text-sm">Guess who is on the Naughty List! Results revealed on exchange day.</p>
+              <span class="text-xs font-bold px-3 py-1 rounded-full" [ngClass]="(vm.currentParticipant.guesses?.length || 0) >= 2 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'">
+                Guesses: {{ vm.currentParticipant.guesses?.length || 0 }} / 2
+              </span>
+            </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div *ngFor="let suspect of vm.suspects" class="border rounded p-3 text-center relative">
                 <div *ngIf="vm.currentParticipant.guesses?.includes(suspect.email)" class="absolute inset-0 bg-gray-100/80 flex items-center justify-center z-10">
-                  <span class="font-bold text-gray-500 transform -rotate-12 border-2 border-gray-500 px-2 py-1 rounded">INVESTIGATED</span>
+                  <span class="font-bold text-gray-500 transform -rotate-12 border-2 border-gray-500 px-2 py-1 rounded">LOCKED IN</span>
                 </div>
                 <img [src]="getAvatarUrl(suspect.displayName)" class="w-12 h-12 rounded-full mx-auto mb-2" />
                 <div class="font-medium text-sm truncate">{{ suspect.displayName }}</div>
                 <button
-                  (click)="makeGuess(vm.currentParticipant.email, suspect.email)"
-                  [disabled]="vm.currentParticipant.guesses?.includes(suspect.email)"
-                  class="mt-2 text-xs bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-700 disabled:opacity-50"
+                  (click)="makeGuess(vm.currentParticipant, suspect.email)"
+                  [disabled]="vm.currentParticipant.guesses?.includes(suspect.email) || (vm.currentParticipant.guesses?.length || 0) >= 2"
+                  class="mt-2 text-xs bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Accuse!
                 </button>
@@ -288,15 +293,16 @@ export class ParticipantViewComponent {
     }
   }
 
-  async makeGuess(guesserEmail: string, suspectEmail: string) {
+  async makeGuess(guesser: Participant, suspectEmail: string) {
+    if ((guesser.guesses?.length || 0) >= 2) {
+      alert("You have used all your accusations! 🕵️‍♂️");
+      return;
+    }
+
     if (!confirm("Are you sure you want to accuse this person? You can't take it back!")) return;
     try {
-      const isNaughty = await this.firestore.makeGuess(guesserEmail, suspectEmail);
-      if (isNaughty) {
-        alert("You caught them! 🕵️‍♂️ They were Naughty!");
-      } else {
-        alert("Wrong! They are Nice 😇. Better luck next time.");
-      }
+      await this.firestore.makeGuess(guesser.email, suspectEmail);
+      alert("Accusation recorded! The truth will be revealed soon... 🕵️‍♂️");
     } catch (error: any) {
       console.error("Error making guess:", error);
       alert("Something went wrong: " + error.message);

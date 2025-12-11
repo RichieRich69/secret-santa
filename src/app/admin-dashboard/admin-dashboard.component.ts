@@ -51,6 +51,40 @@ import { Timestamp } from "@angular/fire/firestore";
           <button (click)="generate()" class="bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700 shadow-lg w-full md:w-auto">Start the exchange 🎲</button>
         </div>
 
+        <!-- Detective Game Results -->
+        <div class="bg-white/90 backdrop-blur-sm p-4 md:p-6 rounded-lg shadow mb-6 md:mb-8">
+          <h2 class="text-xl font-semibold mb-4">Detective Game Results 🕵️‍♂️</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                <tr>
+                  <th class="px-4 py-2">Detective</th>
+                  <th class="px-4 py-2">Guesses</th>
+                  <th class="px-4 py-2">Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let result of getDetectiveResults(vm.participants)" class="border-b">
+                  <td class="px-4 py-2 font-medium">{{ result.name }}</td>
+                  <td class="px-4 py-2">
+                    <span
+                      *ngFor="let guess of result.guesses"
+                      class="mr-2 px-2 py-1 rounded text-xs"
+                      [ngClass]="result.naughtyEmails.includes(guess) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                    >
+                      {{ getParticipantName(guess, vm.participants) }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-2 font-bold" [class.text-green-600]="result.correctCount > 0">{{ result.correctCount }} found</td>
+                </tr>
+                <tr *ngIf="getDetectiveResults(vm.participants).length === 0">
+                  <td colspan="3" class="px-4 py-2 text-center text-gray-500">No accusations yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- List -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
           <!-- Desktop Table -->
@@ -305,6 +339,27 @@ export class AdminDashboardComponent {
         alert(e.message);
       }
     }
+  }
+
+  getParticipantName(email: string, participants: Participant[]): string {
+    return participants.find((p) => p.email === email)?.displayName || email;
+  }
+
+  getDetectiveResults(participants: Participant[]) {
+    const naughtyEmails = participants.filter((p) => p.naughtyOrNice === "naughty").map((p) => p.email);
+
+    return participants
+      .filter((p) => p.guesses && p.guesses.length > 0)
+      .map((p) => {
+        const correctGuesses = p.guesses!.filter((g) => naughtyEmails.includes(g)).length;
+        return {
+          name: p.displayName,
+          guesses: p.guesses,
+          correctCount: correctGuesses,
+          naughtyEmails: naughtyEmails,
+        };
+      })
+      .sort((a, b) => b.correctCount - a.correctCount);
   }
 
   goBack() {
