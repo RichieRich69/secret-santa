@@ -25,6 +25,10 @@ import { Timestamp } from "@angular/fire/firestore";
           <div class="flex flex-col md:flex-row gap-4">
             <input [(ngModel)]="newEmail" placeholder="Gmail Address" class="flex-1 border p-2 rounded w-full" />
             <input [(ngModel)]="newName" placeholder="Display Name" class="flex-1 border p-2 rounded w-full" />
+            <select [(ngModel)]="newNaughtyOrNice" class="border p-2 rounded bg-white">
+              <option value="nice">Nice 😇</option>
+              <option value="naughty">Naughty 😈</option>
+            </select>
             <button (click)="add()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 w-full md:w-auto">Add</button>
           </div>
         </div>
@@ -55,6 +59,7 @@ import { Timestamp } from "@angular/fire/firestore";
               <tr>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exclusions</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preferred Gifts</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -64,6 +69,16 @@ import { Timestamp } from "@angular/fire/firestore";
               <tr *ngFor="let p of vm.participants" [class.bg-yellow-50]="!p.isAllocated">
                 <td class="px-6 py-4 whitespace-nowrap">{{ p.displayName }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ p.email }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <button
+                    (click)="toggleNaughtyOrNice(p)"
+                    [class.text-green-600]="p.naughtyOrNice !== 'naughty'"
+                    [class.text-red-600]="p.naughtyOrNice === 'naughty'"
+                    class="font-medium hover:underline"
+                  >
+                    {{ p.naughtyOrNice === "naughty" ? "Naughty 😈" : "Nice 😇" }}
+                  </button>
+                </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {{ p.exclusions?.join(", ") || "None" }}
                 </td>
@@ -87,6 +102,9 @@ import { Timestamp } from "@angular/fire/firestore";
                   <div class="text-sm text-gray-500">{{ p.email }}</div>
                 </div>
                 <div class="flex gap-2">
+                  <button (click)="toggleNaughtyOrNice(p)" class="p-1 text-xl" [attr.aria-label]="p.naughtyOrNice === 'naughty' ? 'Set to Nice' : 'Set to Naughty'">
+                    {{ p.naughtyOrNice === "naughty" ? "😈" : "😇" }}
+                  </button>
                   <button (click)="updateExclusions(p)" class="text-blue-600 p-1" aria-label="Rules">
                     <span class="text-xl">📋</span>
                   </button>
@@ -191,6 +209,7 @@ export class AdminDashboardComponent {
 
   newEmail = "";
   newName = "";
+  newNaughtyOrNice: "naughty" | "nice" = "nice";
 
   async updateDate(dateStr: string) {
     this.exchangeDate = dateStr;
@@ -210,9 +229,10 @@ export class AdminDashboardComponent {
   async add() {
     if (!this.newEmail || !this.newName) return;
     try {
-      await this.firestore.addParticipant(this.newEmail, this.newName);
+      await this.firestore.addParticipant(this.newEmail, this.newName, this.newNaughtyOrNice);
       this.newEmail = "";
       this.newName = "";
+      this.newNaughtyOrNice = "nice";
     } catch (error: any) {
       console.error("Error adding participant:", error);
       alert(`Failed to add participant: ${error.message}\n\nMake sure you are an admin (your email is in settings/global).`);
@@ -243,6 +263,15 @@ export class AdminDashboardComponent {
       } catch (error: any) {
         alert(error.message);
       }
+    }
+  }
+
+  async toggleNaughtyOrNice(p: Participant) {
+    const newStatus = p.naughtyOrNice === "naughty" ? "nice" : "naughty";
+    try {
+      await this.firestore.updateParticipant(p.email, { naughtyOrNice: newStatus });
+    } catch (error: any) {
+      alert(`Failed to update status: ${error.message}`);
     }
   }
 

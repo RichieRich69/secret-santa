@@ -19,7 +19,7 @@ export class FirestoreService {
     return collectionData(assignmentsRef) as Observable<Assignment[]>;
   }
 
-  async addParticipant(email: string, displayName: string) {
+  async addParticipant(email: string, displayName: string, naughtyOrNice?: "naughty" | "nice") {
     // Use email as ID for simplicity or auto-id.
     // The prompt says "doc ID: participant UID or email".
     // Since we add by email before they login, we might not have UID.
@@ -30,6 +30,7 @@ export class FirestoreService {
       displayName,
       createdAt: Timestamp.now(),
       isActive: true,
+      naughtyOrNice: naughtyOrNice || "nice",
     };
     return setDoc(docRef, participant);
   }

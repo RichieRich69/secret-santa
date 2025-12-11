@@ -6,6 +6,7 @@ export interface Participant {
   displayName: string;
   createdAt: Timestamp;
   isActive: boolean;
+  naughtyOrNice?: "naughty" | "nice";
   exclusions?: string[]; // List of emails this participant cannot pick
   preferredGifts?: string[]; // List of preferred gifts (max 5)
 }
