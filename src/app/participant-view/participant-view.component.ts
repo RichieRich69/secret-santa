@@ -3,12 +3,19 @@ import { CommonModule } from "@angular/common";
 import { AuthService } from "../services/auth.service";
 import { FirestoreService } from "../services/firestore.service";
 import { switchMap, map, tap, startWith } from "rxjs/operators";
-import { combineLatest, of } from "rxjs";
+import { combineLatest, of, interval, Observable } from "rxjs";
 import { User } from "@angular/fire/auth";
 import { CardGridComponent } from "./card-grid.component";
 import { AssignmentRevealComponent } from "./assignment-reveal.component";
 import { RouterModule, Router } from "@angular/router";
 import { Participant } from "../models/user.model";
+
+export interface TimeRemaining {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+}
 
 @Component({
   selector: "app-participant-view",
@@ -62,20 +69,37 @@ import { Participant } from "../models/user.model";
             </div>
           </ng-container>
 
+          <!-- Countdown Timer -->
+          <div class="bg-white p-6 rounded-lg shadow-md mb-6 max-w-md mx-auto" *ngIf="vm.timeRemaining$ | async as timeRemaining">
+            <h3 class="text-xl font-bold text-gray-700 mb-4">Time Remaining ⏳</h3>
+            <div *ngIf="timeRemaining; else exchangeNotActive" class="text-center">
+              <div class="text-4xl font-extrabold text-red-600">
+                {{ $any(timeRemaining).days }}d {{ $any(timeRemaining).hours }}h {{ $any(timeRemaining).minutes }}m {{ $any(timeRemaining).seconds }}s
+              </div>
+              <p class="text-gray-500 text-sm mt-2">Hurry up! The exchange is about to happen!</p>
+            </div>
+            <ng-template #exchangeNotActive>
+              <p class="text-gray-500 text-center text-sm">The exchange date is not set or has passed.</p>
+            </ng-template>
+          </div>
+
           <!-- Preferred Gifts Section -->
           <div class="bg-white p-6 rounded-lg shadow-md mb-6" *ngIf="vm.currentParticipant">
             <h3 class="text-xl font-bold text-gray-700 mb-4">My Wishlist 🎁</h3>
             <p class="text-gray-500 mb-4 text-sm">Add up to 5 items you'd love to receive!</p>
 
-            <div class="flex gap-2 mb-4" *ngIf="(vm.currentParticipant.preferredGifts?.length || 0) < 5">
-              <input
-                #giftInput
-                type="text"
-                placeholder="e.g. Funny socks"
-                class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
-                (keyup.enter)="addGift(vm.currentParticipant, giftInput.value); giftInput.value = ''"
-              />
-              <button (click)="addGift(vm.currentParticipant, giftInput.value); giftInput.value = ''" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">Add</button>
+            <div class="mb-4" *ngIf="(vm.currentParticipant.preferredGifts?.length || 0) < 5">
+              <div class="flex gap-2 mb-2">
+                <input
+                  #giftInput
+                  type="text"
+                  placeholder="e.g. Funny socks"
+                  class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  (keyup.enter)="addGift(vm.currentParticipant, giftInput.value); giftInput.value = ''"
+                />
+                <button (click)="addGift(vm.currentParticipant, giftInput.value); giftInput.value = ''" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">Add</button>
+              </div>
+              <button (click)="suggestGift(giftInput)" class="text-sm text-blue-600 hover:underline">Need inspiration? Suggest a gift idea 💡</button>
             </div>
 
             <ul class="space-y-2">
@@ -86,6 +110,13 @@ import { Participant } from "../models/user.model";
               <li *ngIf="!vm.currentParticipant.preferredGifts?.length" class="text-gray-400 italic">No gifts added yet.</li>
             </ul>
           </div>
+
+          <!-- Naughty or Nice Badge -->
+          <div class="bg-white p-4 rounded-lg shadow-md text-center" *ngIf="vm.currentParticipant">
+            <span class="text-xs font-semibold rounded-full py-1 px-3" [ngClass]="vm.naughtyOrNice === 'Naughty 😈' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'">
+              {{ vm.naughtyOrNice }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -95,6 +126,24 @@ export class ParticipantViewComponent {
   private auth = inject(AuthService);
   private firestore = inject(FirestoreService);
   private router = inject(Router);
+
+  readonly giftIdeas = [
+    "Cozy Socks 🧦",
+    "Scented Candle 🕯️",
+    "Gourmet Chocolate 🍫",
+    "Coffee Mug ☕",
+    "Board Game 🎲",
+    "Desk Plant 🌱",
+    "Bestseller Book 📚",
+    "Portable Charger 🔋",
+    "Funky Puzzle 🧩",
+    "Snack Box 🍿",
+    "Movie Tickets 🎟️",
+    "Warm Blanket 🧣",
+    "Bluetooth Speaker 🔊",
+  ];
+
+  naughtyOrNice = Math.random() > 0.9 ? "Naughty 😈" : "Nice 😇";
 
   user$ = this.auth.user$;
 
@@ -123,16 +172,47 @@ export class ParticipantViewComponent {
       }).pipe(
         map((data: any) => ({
           ...data,
+          naughtyOrNice: this.naughtyOrNice,
           participantCount: data.participants?.length || 0,
           allocatedCount: data.allAssignments?.length || 0,
           allocationPercentage: data.participants?.length ? ((data.allAssignments?.length || 0) / data.participants.length) * 100 : 0,
           currentParticipant: data.participants?.find((p: Participant) => p.email === data.user.email),
           receiverParticipant: data.assignment ? data.participants?.find((p: Participant) => p.email === data.assignment.receiverEmail) : null,
+          timeRemaining$: this.createCountdown(data.settings?.exchangeDate),
         })),
         tap((vm: any) => console.log("VM:", vm))
       );
     })
   );
+
+  createCountdown(exchangeDate: any): Observable<TimeRemaining | null> {
+    if (!exchangeDate) return of(null);
+
+    const targetDate = exchangeDate.toDate ? exchangeDate.toDate() : new Date(exchangeDate);
+
+    return interval(1000).pipe(
+      startWith(0),
+      map(() => {
+        const now = new Date().getTime();
+        const distance = targetDate.getTime() - now;
+
+        if (distance < 0) return null;
+
+        return {
+          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((distance % (1000 * 60)) / 1000),
+        };
+      })
+    );
+  }
+
+  suggestGift(input: HTMLInputElement) {
+    const randomGift = this.giftIdeas[Math.floor(Math.random() * this.giftIdeas.length)];
+    input.value = randomGift;
+    input.focus();
+  }
 
   async addGift(participant: Participant, gift: string) {
     if (!gift.trim()) return;

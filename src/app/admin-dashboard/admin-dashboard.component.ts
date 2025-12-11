@@ -3,7 +3,8 @@ import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { FirestoreService } from "../services/firestore.service";
 import { Participant, Assignment } from "../models/user.model";
-import { Observable } from "rxjs";
+import { Observable, tap } from "rxjs";
+import { Timestamp } from "@angular/fire/firestore";
 
 @Component({
   selector: "app-admin-dashboard",
@@ -21,6 +22,18 @@ import { Observable } from "rxjs";
             <input [(ngModel)]="newEmail" placeholder="Gmail Address" class="flex-1 border p-2 rounded w-full" />
             <input [(ngModel)]="newName" placeholder="Display Name" class="flex-1 border p-2 rounded w-full" />
             <button (click)="add()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 w-full md:w-auto">Add</button>
+          </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="bg-white/90 backdrop-blur-sm p-4 md:p-6 rounded-lg shadow mb-6 md:mb-8">
+          <h2 class="text-xl font-semibold mb-4">Exchange Settings</h2>
+          <div class="flex flex-col md:flex-row gap-4 items-end">
+            <div class="flex-1 w-full">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Exchange Date</label>
+              <input type="datetime-local" [ngModel]="exchangeDate" (ngModelChange)="updateDate($event)" class="border p-2 rounded w-full" />
+            </div>
+            <div class="text-sm text-gray-500 pb-2">Setting this date will enable the countdown timer for participants.</div>
           </div>
         </div>
 
@@ -138,8 +151,43 @@ export class AdminDashboardComponent {
 
   participants$: Observable<Participant[]> = this.firestore.getParticipants();
   assignments$: Observable<Assignment[]> = this.firestore.getAllAssignments();
+
+  exchangeDate: string = "";
+
+  constructor() {
+    this.firestore
+      .getSettings()
+      .pipe(
+        tap((settings) => {
+          if (settings?.exchangeDate) {
+            const date = settings.exchangeDate.toDate();
+            // Format for datetime-local input: YYYY-MM-DDThh:mm
+            const offset = date.getTimezoneOffset() * 60000;
+            const localISOTime = new Date(date.getTime() - offset).toISOString().slice(0, 16);
+            this.exchangeDate = localISOTime;
+          }
+        })
+      )
+      .subscribe();
+  }
+
   newEmail = "";
   newName = "";
+
+  async updateDate(dateStr: string) {
+    this.exchangeDate = dateStr;
+    if (!dateStr) return;
+
+    const date = new Date(dateStr);
+    try {
+      await this.firestore.updateSettings({
+        exchangeDate: Timestamp.fromDate(date),
+      });
+    } catch (error: any) {
+      console.error("Error updating date:", error);
+      alert(`Failed to update date: ${error.message}`);
+    }
+  }
 
   async add() {
     if (!this.newEmail || !this.newName) return;

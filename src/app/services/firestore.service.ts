@@ -47,6 +47,11 @@ export class FirestoreService {
     return docSnapshots(ref).pipe(map((s) => (s.exists() ? (s.data() as Settings) : null)));
   }
 
+  async updateSettings(settings: Partial<Settings>) {
+    const ref = doc(this.firestore, "settings/global");
+    return setDoc(ref, settings, { merge: true });
+  }
+
   async startExchange() {
     const batch = writeBatch(this.firestore);
     const settingsRef = doc(this.firestore, "settings/global");
