@@ -10,29 +10,30 @@ import { Observable } from "rxjs";
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="min-h-screen p-8">
+    <div class="min-h-screen p-4 md:p-8">
       <div class="max-w-4xl mx-auto">
-        <h1 class="text-3xl font-bold text-white mb-8 drop-shadow-md">Admin Dashboard</h1>
+        <h1 class="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8 drop-shadow-md">Admin Dashboard</h1>
 
         <!-- Add Participant -->
-        <div class="bg-white/90 backdrop-blur-sm p-6 rounded-lg shadow mb-8">
+        <div class="bg-white/90 backdrop-blur-sm p-4 md:p-6 rounded-lg shadow mb-6 md:mb-8">
           <h2 class="text-xl font-semibold mb-4">Add Participant</h2>
-          <div class="flex gap-4">
-            <input [(ngModel)]="newEmail" placeholder="Gmail Address" class="flex-1 border p-2 rounded" />
-            <input [(ngModel)]="newName" placeholder="Display Name" class="flex-1 border p-2 rounded" />
-            <button (click)="add()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">Add</button>
+          <div class="flex flex-col md:flex-row gap-4">
+            <input [(ngModel)]="newEmail" placeholder="Gmail Address" class="flex-1 border p-2 rounded w-full" />
+            <input [(ngModel)]="newName" placeholder="Display Name" class="flex-1 border p-2 rounded w-full" />
+            <button (click)="add()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 w-full md:w-auto">Add</button>
           </div>
         </div>
 
         <!-- Actions -->
-        <div class="flex justify-end mb-4 gap-4">
-          <button (click)="reset()" class="bg-gray-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-700 shadow-lg">Reset Exchange 🔄</button>
-          <button (click)="generate()" class="bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700 shadow-lg">Start the exchange 🎲</button>
+        <div class="flex flex-col md:flex-row justify-end mb-4 gap-4">
+          <button (click)="reset()" class="bg-gray-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-700 shadow-lg w-full md:w-auto">Reset Exchange 🔄</button>
+          <button (click)="generate()" class="bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700 shadow-lg w-full md:w-auto">Start the exchange 🎲</button>
         </div>
 
         <!-- List -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
-          <table class="w-full">
+          <!-- Desktop Table -->
+          <table class="w-full hidden md:table">
             <thead class="bg-gray-50">
               <tr>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
@@ -59,12 +60,42 @@ import { Observable } from "rxjs";
               </tr>
             </tbody>
           </table>
+
+          <!-- Mobile Cards -->
+          <div class="md:hidden divide-y divide-gray-200">
+            <div *ngFor="let p of participants$ | async" class="p-4 space-y-2">
+              <div class="flex justify-between items-start">
+                <div>
+                  <div class="font-medium text-gray-900">{{ p.displayName }}</div>
+                  <div class="text-sm text-gray-500">{{ p.email }}</div>
+                </div>
+                <div class="flex gap-2">
+                  <button (click)="updateExclusions(p)" class="text-blue-600 p-1" aria-label="Rules">
+                    <span class="text-xl">📋</span>
+                  </button>
+                  <button (click)="remove(p.email)" class="text-red-600 p-1" aria-label="Remove">
+                    <span class="text-xl">🗑️</span>
+                  </button>
+                </div>
+              </div>
+              <div class="text-sm">
+                <span class="text-gray-500">Exclusions: </span>
+                <span class="text-gray-700">{{ p.exclusions?.join(", ") || "None" }}</span>
+              </div>
+              <div class="text-sm">
+                <span class="text-gray-500">Wants: </span>
+                <span class="text-gray-700">{{ p.preferredGifts?.join(", ") || "None" }}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Assignments List -->
         <div class="bg-white rounded-lg shadow overflow-hidden mt-8" *ngIf="(assignments$ | async)?.length">
           <h2 class="text-xl font-semibold p-6 border-b">Assignments</h2>
-          <table class="w-full">
+
+          <!-- Desktop Table -->
+          <table class="w-full hidden md:table">
             <thead class="bg-gray-50">
               <tr>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giver</th>
@@ -82,6 +113,21 @@ import { Observable } from "rxjs";
               </tr>
             </tbody>
           </table>
+
+          <!-- Mobile Cards -->
+          <div class="md:hidden divide-y divide-gray-200">
+            <div *ngFor="let a of assignments$ | async" class="p-4">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-xs font-medium text-gray-500 uppercase">Giver</span>
+                <button (click)="unassign(a.giverEmail)" class="text-red-600 text-sm">Unassign</button>
+              </div>
+              <div class="mb-4 text-gray-900">{{ a.giverEmail }}</div>
+
+              <div class="text-xs font-medium text-gray-500 uppercase mb-1">Receiver</div>
+              <div class="text-gray-900">{{ a.receiverDisplayName }}</div>
+              <div class="text-sm text-gray-500">{{ a.receiverEmail }}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
