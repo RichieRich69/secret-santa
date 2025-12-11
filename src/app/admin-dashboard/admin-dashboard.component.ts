@@ -1,6 +1,7 @@
 import { Component, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
+import { Router } from "@angular/router";
 import { FirestoreService } from "../services/firestore.service";
 import { Participant, Assignment } from "../models/user.model";
 import { Observable, tap } from "rxjs";
@@ -13,7 +14,10 @@ import { Timestamp } from "@angular/fire/firestore";
   template: `
     <div class="min-h-screen p-4 md:p-8">
       <div class="max-w-4xl mx-auto">
-        <h1 class="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8 drop-shadow-md">Admin Dashboard</h1>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
+          <h1 class="text-2xl md:text-3xl font-bold text-white drop-shadow-md">Admin Dashboard</h1>
+          <button (click)="goBack()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded backdrop-blur-sm transition-colors text-sm font-medium">← Back to Participant View</button>
+        </div>
 
         <!-- Add Participant -->
         <div class="bg-white/90 backdrop-blur-sm p-4 md:p-6 rounded-lg shadow mb-6 md:mb-8">
@@ -148,6 +152,7 @@ import { Timestamp } from "@angular/fire/firestore";
 })
 export class AdminDashboardComponent {
   private firestore = inject(FirestoreService);
+  private router = inject(Router);
 
   participants$: Observable<Participant[]> = this.firestore.getParticipants();
   assignments$: Observable<Assignment[]> = this.firestore.getAllAssignments();
@@ -258,5 +263,9 @@ export class AdminDashboardComponent {
         alert(e.message);
       }
     }
+  }
+
+  goBack() {
+    this.router.navigate(["/participant"]);
   }
 }
