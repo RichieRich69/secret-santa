@@ -49,6 +49,22 @@ npm start
 ```
 Navigate to `http://localhost:4200`.
 
+## Docker Support
+
+You can also run the application in a Docker container.
+
+1.  **Configure Environment Variables**
+    - Copy `.env.example` to `.env` and fill in your Firebase details.
+    ```bash
+    cp .env.example .env
+    ```
+
+2.  **Build and Run**
+    ```bash
+    docker-compose up --build
+    ```
+    The application will be available at `http://localhost:8080`.
+
 ## Build for Production
 
 ```bash
