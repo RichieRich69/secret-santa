@@ -15,7 +15,7 @@ import { Timestamp } from "@angular/fire/firestore";
     <div class="min-h-screen p-4 md:p-8" *ngIf="vm$ | async as vm">
       <div class="max-w-4xl mx-auto">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
-          <h1 class="text-2xl md:text-3xl font-bold text-white drop-shadow-md">Admin Dashboard</h1>
+          <h1 class="bg-white/20 hover:bg-white/30 text-2xl md:text-3xl font-bold text-white drop-shadow-md rounded backdrop-blur-sm transition-colors ">Admin Dashboard</h1>
           <button (click)="goBack()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded backdrop-blur-sm transition-colors text-sm font-medium">← Back to Participant View</button>
         </div>
 
