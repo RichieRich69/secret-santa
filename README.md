@@ -2,6 +2,12 @@
 
 A production-ready Secret Santa web app built with Angular 18, Firebase, and Tailwind CSS.
 
+## Home Page
+![[.readme-media\home-page.gif]]
+
+## Admin Page
+![[.readme-media\admin-page.gif]]
+
 ## Prerequisites
 
 - Node.js (v18+)
