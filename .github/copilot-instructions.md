@@ -19,6 +19,7 @@
   constructor(private firestore: Firestore) {}
   ```
 - **State Management**: The codebase heavily uses `Observable` (AngularFire). Use `AsyncPipe` in templates to subscribe/unsubscribe automatically.
+- **Routing**: Defined in `src/app/app.routes.config.ts`. Uses functional guards (`authGuard`, `adminGuard`) that rely on `AuthService`.
 
 ### Firebase & Data Model
 
@@ -28,12 +29,12 @@
   - `settings`: Singleton document `settings/global`. Stores `adminEmails` array, `exchangeDate`, and app state (`isAssignmentsGenerated`).
   - `notificationTokens`: Stores FCM tokens for reminders.
 - **Security Rules (`firestore.rules`)**:
-  - **Admin Access**: Determined by checking if `request.auth.token.email` exists in `settings/global.adminEmails`.
+  - **Admin Access**: Helper function `isAdmin()` checks if `request.auth.token.email` is in `settings/global.adminEmails`.
   - **Assignments**:
-    - Readable by all authenticated users (to check availability/prevent duplicates).
+    - Readable by all authenticated users (to check availability).
     - Create/Update restricted to Admin (generation) or User (drawing their own, updating `isRevealed`).
 - **Cloud Functions**:
-  - `sendReminders`: Scheduled function (every 24h) that checks `exchangeDate` and sends notifications 3 days prior.
+  - `sendReminders`: Scheduled function (every 24h) in `firebase-functions/index.js`. Checks `exchangeDate` in `settings/global` and sends notifications 3 days prior.
 
 ### Styling
 
@@ -50,21 +51,15 @@
   3. Prevent deadlocks (e.g., forcing a pick if only 2 people remain).
   4. Write the new assignment.
 
-### Authentication & Routing
+### Build & Deployment
 
-- **AuthService**: Wraps Firebase Auth (Google Sign-In).
-- **Guards (`app.routes.config.ts`)**:
-  - `authGuard`: Protects `/participant`.
-  - `adminGuard`: Protects `/admin`. _Note: Currently performs a simple auth check; robust admin validation should happen in the component or be enhanced._
-
-## Development & Build
-
+- **Environment Setup**: `scripts/set-env.js` generates `src/environments/environment.ts` and `environment.prod.ts` from `process.env` variables. This runs automatically before `ng build`.
 - **Run Locally**: `npm start` (serves on port 4200).
 - **Build**: `npm run build` (outputs to `dist/secret-santa`).
 - **Deploy**: `npx firebase-tools deploy` (deploys Hosting, Firestore Rules, and Functions).
 
 ## Common Tasks
 
-- **Adding a Participant Field**: Update `Participant` interface in `user.model.ts` and `FirestoreService` methods.
+- **Adding a Participant Field**: Update `Participant` interface in `src/app/models/user.model.ts` and `FirestoreService` methods.
 - **Updating Rules**: Modify `firestore.rules`. Always test complex logic (like `isAdmin` or assignment validation) in the Firebase Console simulator before deploying.
 - **Debugging Functions**: Use `firebase functions:log` to view logs for `sendReminders`.
