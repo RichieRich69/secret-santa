@@ -3,10 +3,7 @@
 A production-ready Secret Santa web app built with Angular 18, Firebase, and Tailwind CSS.
 
 ## Home Page
-![[.readme-media\home-page.gif]]
-
-## Admin Page
-![[.readme-media\admin-page.gif]]
+![[https://raw.githubusercontent.com/RichieRich69/secret-santa/refs/heads/main/.readme-media/home-page.gif]]
 
 ## Prerequisites
 
